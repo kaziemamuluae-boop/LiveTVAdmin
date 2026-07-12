@@ -1,0 +1,6 @@
+{
+  "name": "KaziTV",
+  "description": "Premium Live TV & Sports Streaming Android App with ExoPlayer and GitHub auto-sync.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
