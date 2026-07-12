@@ -85,46 +85,25 @@ class KaziRepository(context: Context) {
 
     // Load Mock Data if Database is completely empty on first run
     suspend fun loadMockDataIfEmpty() {
-        val currentEvents = allEvents.firstOrNull() ?: emptyList()
-        if (currentEvents.isEmpty()) {
-            val event1 = EventEntity(
-                team1Name = "Manchester United",
-                team1Flag = "https://media.api-sports.io/football/teams/33.png",
-                team2Name = "Liverpool",
-                team2Flag = "https://media.api-sports.io/football/teams/40.png",
-                status = "LIVE",
-                date = "2026-07-12",
-                time = "18:00",
-                category = "Football",
-                league = "English Premier League",
-                round = "Matchday 5"
-            )
-            val eventId1 = insertEvent(event1).toInt()
-            insertStream(StreamEntity(eventId = eventId1, quality = "FHD", serverName = "Ultra Stream 1", streamUrl = "https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8"))
-            insertStream(StreamEntity(eventId = eventId1, quality = "HD", serverName = "Backup Server", streamUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"))
-
-            val event2 = EventEntity(
-                team1Name = "Los Angeles Lakers",
-                team1Flag = "https://media.api-sports.io/basketball/teams/137.png",
-                team2Name = "Golden State Warriors",
-                team2Flag = "https://media.api-sports.io/basketball/teams/141.png",
-                status = "UPCOMING",
-                date = "2026-07-13",
-                time = "20:00",
-                category = "Basketball",
-                league = "NBA",
-                round = "Regular Season"
-            )
-            val eventId2 = insertEvent(event2).toInt()
-            insertStream(StreamEntity(eventId = eventId2, quality = "HD", serverName = "Primary TV", streamUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"))
-
-            // Save default configurations
-            if (settingsDao.getLocalSettingsSync() == null) {
-                settingsDao.saveLocalSettings(LocalSettingsEntity())
+        // Find and delete the specific demo events that were inserted before
+        val events = eventDao.getAllEvents().firstOrNull() ?: emptyList()
+        events.forEach { event ->
+            if (event.team1Name == "Manchester United" || event.team1Name == "Los Angeles Lakers") {
+                eventDao.deleteEvent(event)
+                // Delete corresponding streams
+                val streams = streamDao.getStreamsForEventSync(event.id)
+                streams.forEach { stream ->
+                    streamDao.deleteStream(stream)
+                }
             }
-            if (settingsDao.getGitHubConfigSync() == null) {
-                settingsDao.saveGitHubConfig(GitHubConfigEntity())
-            }
+        }
+
+        // Save default configurations
+        if (settingsDao.getLocalSettingsSync() == null) {
+            settingsDao.saveLocalSettings(LocalSettingsEntity())
+        }
+        if (settingsDao.getGitHubConfigSync() == null) {
+            settingsDao.saveGitHubConfig(GitHubConfigEntity())
         }
     }
 
