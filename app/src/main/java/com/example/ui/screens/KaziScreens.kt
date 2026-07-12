@@ -3,6 +3,7 @@ package com.example.ui.screens
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -498,67 +499,38 @@ fun KaziHomeScreen(navController: NavHostController, viewModel: KaziViewModel) {
                     }
                 }
             } else {
-                // Scrollable Live items list (Layout patterned as Featured Event followed by List of standard events)
+                // Unified single Card containing all match row wraps, styled exactly like HTML
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Feature Card: Very first live event is formatted with a stunning visual card
-                    val featuredEvent = filteredEvents.firstOrNull()
-                    if (featuredEvent != null) {
-                        item {
-                            FeaturedEventCard(
-                                event = featuredEvent,
-                                onClick = {
-                                    selectedEventForBottomSheet = featuredEvent
-                                },
-                                onFavoriteToggle = {
-                                    viewModel.toggleFavorite(featuredEvent)
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("match_list_card"),
+                            shape = RoundedCornerShape(28.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            ),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                        ) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                filteredEvents.forEachIndexed { index, event ->
+                                    HtmlStyleMatchRow(
+                                        event = event,
+                                        onClick = { selectedEventForBottomSheet = event }
+                                    )
+                                    if (index < filteredEvents.size - 1) {
+                                        HorizontalDivider(
+                                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                                            thickness = 1.dp,
+                                            modifier = Modifier.padding(horizontal = 20.dp)
+                                        )
+                                    }
                                 }
-                            )
-                        }
-                    }
-
-                    // Remaining events as upcoming matches header & list
-                    val remainingEvents = filteredEvents.drop(1)
-                    if (remainingEvents.isNotEmpty()) {
-                        item {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Upcoming Matches",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                    letterSpacing = 0.5.sp
-                                )
-                                Text(
-                                    text = "View All",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF00B0FF),
-                                    modifier = Modifier.clickable { /* no-op view all */ }
-                                )
                             }
-                        }
-
-                        items(remainingEvents) { event ->
-                            EventCard(
-                                event = event,
-                                onClick = {
-                                    selectedEventForBottomSheet = event
-                                },
-                                onFavoriteToggle = {
-                                    viewModel.toggleFavorite(event)
-                                }
-                            )
                         }
                     }
                 }
@@ -1015,27 +987,89 @@ fun EventCard(
 }
 
 @Composable
-fun TeamFlag(url: String, char: Char) {
+fun TeamFlag(url: String, char: Char, size: androidx.compose.ui.unit.Dp = 60.dp) {
     Box(
         modifier = Modifier
-            .size(60.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+            .size(size),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = char.toString().uppercase(),
-            fontWeight = FontWeight.Black,
-            fontSize = 24.sp,
-            color = MaterialTheme.colorScheme.primary
-        )
         if (url.isNotEmpty() && (url.startsWith("http://") || url.startsWith("https://"))) {
-            AsyncImage(
-                model = url,
-                contentDescription = "Team Flag",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize().clip(CircleShape)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = url,
+                    contentDescription = "Team Flag",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize().clip(CircleShape)
+                )
+            }
+        } else {
+            // It could be an emoji (like 🇦🇷) or a fallback character
+            val displayText = url.ifEmpty { char.toString().uppercase() }
+            Text(
+                text = displayText,
+                fontSize = if (url.isNotEmpty()) (size.value * 0.5f).sp else (size.value * 0.4f).sp,
+                textAlign = TextAlign.Center
             )
+        }
+    }
+}
+
+// =========================================================================
+// SCREEN 3: EVENT ACTION BOTTOM SHEET
+// =========================================================================
+@Composable
+fun HtmlActionMenuItem(
+    icon: @Composable () -> Unit,
+    title: String,
+    subtitle: String,
+    backgroundColor: Color,
+    textColor: Color,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = backgroundColor
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(textColor.copy(alpha = 0.12f), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                icon()
+            }
+            Spacer(modifier = Modifier.width(14.dp))
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = title,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = textColor
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = textColor.copy(alpha = 0.7f)
+                )
+            }
         }
     }
 }
@@ -1053,6 +1087,8 @@ fun KaziEventActionBottomSheet(
     onEditStreamsOnly: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val isSystemDark = isSystemInDarkTheme()
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -1061,93 +1097,97 @@ fun KaziEventActionBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp)
+                .padding(horizontal = 24.dp)
+                .padding(top = 8.dp, bottom = 24.dp)
                 .navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "${event.team1Name} vs ${event.team2Name}",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Black,
-                textAlign = TextAlign.Center
+            // Sheet Handle bar is drawn automatically by ModalBottomSheet
+
+            // Action Match Header like HTML .action-match-header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        if (isSystemDark) Color(0xFF23262B) else Color(0xFFF9F9F9),
+                        RoundedCornerShape(16.dp)
+                    )
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TeamFlag(url = event.team1Flag, char = event.team1Name.firstOrNull() ?: '1', size = 26.dp)
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "${event.team1Name} vs ${event.team2Name}",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                TeamFlag(url = event.team2Flag, char = event.team2Name.firstOrNull() ?: '2', size = 26.dp)
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // Option 1: Watch Stream (btn-stream)
+            HtmlActionMenuItem(
+                icon = { Text("📺", fontSize = 20.sp) },
+                title = "Watch Stream",
+                subtitle = "Open stream links",
+                backgroundColor = if (isSystemDark) Color(0xFF10253C) else Color(0xFFF0F8FF),
+                textColor = Color(0xFF0A84FF),
+                onClick = onWatchStream
             )
-            Text(
-                text = event.league,
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                textAlign = TextAlign.Center
+
+            // Option 2: Full Edit (btn-edit)
+            HtmlActionMenuItem(
+                icon = { Text("✏️", fontSize = 20.sp) },
+                title = "Full Edit",
+                subtitle = "Edit all event details",
+                backgroundColor = if (isSystemDark) Color(0xFF2C2F34) else Color(0xFFF5F5F7),
+                textColor = if (isSystemDark) Color.White else Color(0xFF111111),
+                onClick = onFullEdit
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            // Option 3: Edit Streams Only (btn-stream-edit)
+            HtmlActionMenuItem(
+                icon = { Text("🔗", fontSize = 20.sp) },
+                title = "Edit Streams Only",
+                subtitle = "Add, edit or remove links",
+                backgroundColor = if (isSystemDark) Color(0xFF1C2C22) else Color(0xFFF0FFF4),
+                textColor = Color(0xFF30B94D),
+                onClick = onEditStreamsOnly
+            )
 
-            // Option 1: Watch Stream
+            // Option 4: Delete List (btn-delete)
+            HtmlActionMenuItem(
+                icon = { Text("🗑️", fontSize = 20.sp) },
+                title = "Delete List",
+                subtitle = "Remove this event",
+                backgroundColor = if (isSystemDark) Color(0xFF33191B) else Color(0xFFFFF0F0),
+                textColor = Color(0xFFFF3B30),
+                onClick = onDelete
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Cancel button like close-btn in HTML
             Button(
-                onClick = onWatchStream,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .testTag("watch_stream_action"),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-            ) {
-                Icon(Icons.Default.PlayCircle, contentDescription = "Watch Icon")
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("WATCH STREAM", fontWeight = FontWeight.Bold)
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Option 2: Full Edit Match Details
-            OutlinedButton(
-                onClick = onFullEdit,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .testTag("full_edit_action")
-            ) {
-                Icon(Icons.Default.Edit, contentDescription = "Edit Icon")
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("FULL EDIT MATCH", fontWeight = FontWeight.Bold)
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Option 3: Stream manager only
-            OutlinedButton(
-                onClick = onEditStreamsOnly,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .testTag("streams_manager_action")
-            ) {
-                Icon(Icons.Default.Dns, contentDescription = "Servers Icon")
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("EDIT STREAM SERVERS", fontWeight = FontWeight.Bold)
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Option 4: Delete Match event
-            Button(
-                onClick = onDelete,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .testTag("delete_event_action"),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-            ) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete Icon", tint = Color.White)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("DELETE EVENT", fontWeight = FontWeight.Bold, color = Color.White)
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Cancel dismiss trigger
-            TextButton(
                 onClick = onDismiss,
-                modifier = Modifier.testTag("cancel_action")
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .testTag("cancel_action"),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isSystemDark) Color(0xFF2C2F34) else Color(0xFFF2F2F7),
+                    contentColor = Color(0xFFFF3B30)
+                ),
+                shape = RoundedCornerShape(16.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
             ) {
-                Text("Cancel", fontWeight = FontWeight.Bold)
+                Text("Cancel", fontWeight = FontWeight.Bold, fontSize = 15.sp)
             }
         }
     }
@@ -2585,12 +2625,33 @@ fun KaziFavoritesScreen(navController: NavHostController, viewModel: KaziViewMod
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    items(favoritesList) { event ->
-                        EventCard(
-                            event = event,
-                            onClick = { selectedEventForBottomSheet = event },
-                            onFavoriteToggle = { viewModel.toggleFavorite(event) }
-                        )
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("favorites_list_card"),
+                            shape = RoundedCornerShape(28.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            ),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                        ) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                favoritesList.forEachIndexed { index, event ->
+                                    HtmlStyleMatchRow(
+                                        event = event,
+                                        onClick = { selectedEventForBottomSheet = event }
+                                    )
+                                    if (index < favoritesList.size - 1) {
+                                        HorizontalDivider(
+                                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                                            thickness = 1.dp,
+                                            modifier = Modifier.padding(horizontal = 20.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -2814,5 +2875,261 @@ fun KaziLogoBadge(
             fontWeight = FontWeight.Black,
             fontSize = fontSize
         )
+    }
+}
+
+// =========================================================================
+// HTML MATCH ROW STYLING COMPOSABLES & HELPERS
+// =========================================================================
+fun getSportColor(category: String): Color {
+    return when (category.lowercase()) {
+        "football", "soccer" -> Color(0xFF30B94D)
+        "cricket" -> Color(0xFF0A84FF)
+        "basketball" -> Color(0xFFFF9500)
+        else -> Color(0xFF8E8E93)
+    }
+}
+
+fun formatMatchDate(dateStr: String): String {
+    if (dateStr.isEmpty()) return ""
+    return try {
+        val parts = dateStr.split("-")
+        if (parts.size == 3) {
+            val day = parts[2].toIntOrNull() ?: return dateStr
+            val monthIdx = parts[1].toIntOrNull()?.minus(1) ?: return dateStr
+            val months = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+            if (monthIdx in 0..11) {
+                "$day ${months[monthIdx]}"
+            } else {
+                dateStr
+            }
+        } else {
+            dateStr
+        }
+    } catch (e: Exception) {
+        dateStr
+    }
+}
+
+fun formatMatchTime(timeStr: String): String {
+    if (timeStr.isEmpty()) return ""
+    return try {
+        val parts = timeStr.split(":")
+        if (parts.size >= 2) {
+            val hour = parts[0].toIntOrNull() ?: return timeStr
+            val minute = parts[1]
+            val suffix = if (hour >= 12) "PM" else "AM"
+            val displayHour = if (hour % 12 == 0) 12 else hour % 12
+            "$displayHour:$minute $suffix"
+        } else {
+            timeStr
+        }
+    } catch (e: Exception) {
+        timeStr
+    }
+}
+
+@Composable
+fun HtmlStyleMatchRow(
+    event: EventEntity,
+    onClick: () -> Unit
+) {
+    val isLive = event.status == "LIVE"
+    val sportColorVal = getSportColor(event.category)
+    val isSystemDark = isSystemInDarkTheme()
+
+    val backgroundColor = if (isLive) {
+        if (isSystemDark) {
+            Color(0xFF2B1618) // Soft dark red background
+        } else {
+            Color(0xFFFFF8F8) // Soft light red background
+        }
+    } else {
+        Color.Transparent
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(backgroundColor)
+            .clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(top = 14.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Team 1
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                TeamFlag(url = event.team1Flag, char = event.team1Name.firstOrNull() ?: '1', size = 36.dp)
+                Text(
+                    text = event.team1Name,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            // Match Info Center
+            Column(
+                modifier = Modifier
+                    .wrapContentWidth()
+                    .padding(horizontal = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                if (isLive) {
+                    Row(
+                        modifier = Modifier
+                            .background(
+                                if (isSystemDark) Color(0xFF381A1C) else Color(0xFFFFF0F0),
+                                RoundedCornerShape(20.dp)
+                            )
+                            .border(
+                                1.dp,
+                                Color(0xFFFF3B30).copy(alpha = 0.2f),
+                                RoundedCornerShape(20.dp)
+                            )
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        val infiniteTransition = rememberInfiniteTransition(label = "blink")
+                        val alpha by infiniteTransition.animateFloat(
+                            initialValue = 1f,
+                            targetValue = 0.4f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(1200, easing = LinearEasing),
+                                repeatMode = RepeatMode.Reverse
+                            ),
+                            label = "alpha"
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(7.dp)
+                                .alpha(alpha)
+                                .background(Color(0xFFFF3B30), CircleShape)
+                        )
+                        Text(
+                            text = "Live",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFFF3B30)
+                        )
+                    }
+
+                    if (event.time.isNotEmpty()) {
+                        Text(
+                            text = formatMatchTime(event.time),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF8E8E93),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                } else {
+                    val datePart = if (event.date.isNotEmpty()) {
+                        formatMatchDate(event.date)
+                    } else {
+                        event.status
+                    }
+                    Text(
+                        text = datePart.uppercase(),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF8E8E93),
+                        letterSpacing = 0.4.sp,
+                        textAlign = TextAlign.Center
+                    )
+
+                    if (event.time.isNotEmpty()) {
+                        Text(
+                            text = formatMatchTime(event.time),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+
+            // Team 2
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                TeamFlag(url = event.team2Flag, char = event.team2Name.firstOrNull() ?: '2', size = 36.dp)
+                Text(
+                    text = event.team2Name,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+
+        // Meta (Category, separators, league, round)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 11.dp, top = 4.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = event.category,
+                color = sportColorVal,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            
+            Text(
+                text = "|",
+                color = if (isSystemDark) Color(0x33FFFFFF) else Color(0xFFD1D1D6),
+                fontSize = 11.sp,
+                modifier = Modifier.padding(horizontal = 5.dp)
+            )
+            
+            Text(
+                text = event.league,
+                color = Color(0xFF8E8E93),
+                fontSize = 11.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            if (event.round.isNotEmpty() && event.round != "N/A" && event.round != "null") {
+                Text(
+                    text = "|",
+                    color = if (isSystemDark) Color(0x33FFFFFF) else Color(0xFFD1D1D6),
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(horizontal = 5.dp)
+                )
+
+                Text(
+                    text = event.round,
+                    color = sportColorVal,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
     }
 }
