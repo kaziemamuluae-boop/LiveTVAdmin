@@ -1,0 +1,82 @@
+[
+  {
+    "id": "1",
+    "team1": "Argentinaa",
+    "team1_flag": "🇦🇷",
+    "team2": "Brazill",
+    "team2_flag": "🇧🇷",
+    "date": "",
+    "time": "",
+    "category": "Football",
+    "league": "World Cup",
+    "round": "Final",
+    "streams": [
+      {
+        "quality": "FHD",
+        "label": "HD Quality",
+        "url": "https://example.com/stream1"
+      },
+      {
+        "quality": "HD",
+        "label": "Medium Quality",
+        "url": "https://example.com/stream2"
+      },
+      {
+        "quality": "SD",
+        "label": "Mobile Quality",
+        "url": "https://example.com/stream3"
+      }
+    ]
+  },
+  {
+    "id": "3",
+    "team1": "France",
+    "team1_flag": "🇫🇷",
+    "team2": "Germany",
+    "team2_flag": "🇩🇪",
+    "time": "20:00",
+    "day": "TODAY",
+    "category": "Football",
+    "league": "Euro 2024",
+    "round": "Group Stage",
+    "streams": [
+      {
+        "quality": "HD",
+        "label": "Global TV",
+        "url": "https://us170.jagobd.com:447/c3VydmVyX8RpbEU9Mi8xNy8yMDE0GIDU6RgzQ6NTAgdEoaeFzbF92YWxIZTO0U0ezN1IzMyfvcGVMZEJCTEFWeVN3PTOmdFsaWRtaW51aiPhnPTI/asian-test-sample-ok-d.stream/playlist.m3u8?checkedby:iptvcat.com"
+      }
+    ]
+  },
+  {
+    "id": "1783283041657",
+    "team1": "Brazil",
+    "team1_flag": "🇧🇷",
+    "team2": "Norway",
+    "team2_flag": "🇳🇴",
+    "date": "2026-07-06",
+    "time": "00:38",
+    "category": "Football",
+    "league": "FIFA WOULD CUP",
+    "round": "ROUND OF 16",
+    "streams": []
+  },
+  {
+    "id": "1783283464319",
+    "team1": "India",
+    "team1_flag": "🇮🇳",
+    "team2": "Pakistan",
+    "team2_flag": "🇵🇰",
+    "date": "2026-07-06",
+    "time": "01:00",
+    "category": "Football",
+    "league": "Boxing Gloves",
+    "round": "N/A",
+    "streams": [
+      {
+        "quality": "FHD",
+        "label": "Deshe Bideshe",
+        "url": "https://dbcanada.sonarbanglatv.com/deshebideshe/dbtv/index.m3u8"
+      }
+    ]
+  }
+]

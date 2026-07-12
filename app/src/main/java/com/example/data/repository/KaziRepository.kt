@@ -25,7 +25,7 @@ import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 
-class KaziRepository(context: Context) {
+class KaziRepository(private val context: Context) {
 
     private val db = AppDatabase.getDatabase(context)
     private val eventDao = db.eventDao()
@@ -98,6 +98,75 @@ class KaziRepository(context: Context) {
             }
         }
 
+        // Load default LiveEvents.json from assets if database is empty
+        val remainingEvents = eventDao.getAllEvents().firstOrNull() ?: emptyList()
+        if (remainingEvents.isEmpty()) {
+            try {
+                val jsonString = context.assets.open("Live/LiveEvents.json").bufferedReader().use { it.readText() }
+                val jsonArray = org.json.JSONArray(jsonString)
+                for (i in 0 until jsonArray.length()) {
+                    val obj = jsonArray.getJSONObject(i)
+                    val team1 = obj.optString("team1", "")
+                    val team1Flag = obj.optString("team1_flag", "")
+                    val team2 = obj.optString("team2", "")
+                    val team2Flag = obj.optString("team2_flag", "")
+                    val date = obj.optString("date", "")
+                    val time = obj.optString("time", "")
+                    val category = obj.optString("category", "")
+                    val league = obj.optString("league", "")
+                    val round = obj.optString("round", "")
+
+                    var status = "LIVE"
+                    if (obj.has("status")) {
+                        status = obj.getString("status")
+                    } else {
+                        val day = obj.optString("day", "")
+                        if (day.lowercase() == "today") {
+                            status = "LIVE"
+                        } else {
+                            status = "UPCOMING"
+                        }
+                    }
+
+                    val event = EventEntity(
+                        id = 0,
+                        team1Name = team1,
+                        team1Flag = team1Flag,
+                        team2Name = team2,
+                        team2Flag = team2Flag,
+                        status = status,
+                        date = date,
+                        time = time,
+                        category = category,
+                        league = league,
+                        round = round
+                    )
+                    val eventId = eventDao.insertEvent(event).toInt()
+
+                    val streamsArray = obj.optJSONArray("streams")
+                    if (streamsArray != null) {
+                        for (j in 0 until streamsArray.length()) {
+                            val streamObj = streamsArray.getJSONObject(j)
+                            val quality = streamObj.optString("quality", "FHD")
+                            val label = streamObj.optString("label", "Main Stream")
+                            val url = streamObj.optString("url", "")
+
+                            val stream = StreamEntity(
+                                id = 0,
+                                eventId = eventId,
+                                quality = quality,
+                                serverName = label,
+                                streamUrl = url
+                            )
+                            streamDao.insertStream(stream)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
         // Save default configurations
         if (settingsDao.getLocalSettingsSync() == null) {
             settingsDao.saveLocalSettings(LocalSettingsEntity())
@@ -138,40 +207,68 @@ class KaziRepository(context: Context) {
             val jsonString = String(decodedBytes, Charsets.UTF_8)
 
             // Parse json
-            val listType = Types.newParameterizedType(List::class.java, RemoteEventJson::class.java)
-            val adapter: JsonAdapter<List<RemoteEventJson>> = moshi.adapter(listType)
-            val remoteEvents = adapter.fromJson(jsonString) ?: return@withContext Result.failure(Exception("Failed to parse JSON file structure."))
+            val jsonArray = org.json.JSONArray(jsonString)
 
             // Clear and overwrite local DB tables
             eventDao.clearAllEvents()
             streamDao.clearAllStreams()
 
-            for (remoteEvent in remoteEvents) {
-                val event = EventEntity(
-                    id = remoteEvent.id,
-                    team1Name = remoteEvent.team1Name,
-                    team1Flag = remoteEvent.team1Flag,
-                    team2Name = remoteEvent.team2Name,
-                    team2Flag = remoteEvent.team2Flag,
-                    status = remoteEvent.status,
-                    date = remoteEvent.date,
-                    time = remoteEvent.time,
-                    category = remoteEvent.category,
-                    league = remoteEvent.league,
-                    round = remoteEvent.round,
-                    isFavorite = false
-                )
-                eventDao.insertEvent(event)
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.getJSONObject(i)
+                val team1 = obj.optString("team1", "")
+                val team1Flag = obj.optString("team1_flag", "")
+                val team2 = obj.optString("team2", "")
+                val team2Flag = obj.optString("team2_flag", "")
+                val date = obj.optString("date", "")
+                val time = obj.optString("time", "")
+                val category = obj.optString("category", "")
+                val league = obj.optString("league", "")
+                val round = obj.optString("round", "")
 
-                for (remoteStream in remoteEvent.streams) {
-                    val stream = StreamEntity(
-                        id = remoteStream.id,
-                        eventId = remoteEvent.id,
-                        quality = remoteStream.quality,
-                        serverName = remoteStream.label,
-                        streamUrl = remoteStream.url
-                    )
-                    streamDao.insertStream(stream)
+                var status = "LIVE"
+                if (obj.has("status")) {
+                    status = obj.getString("status")
+                } else {
+                    val day = obj.optString("day", "")
+                    if (day.lowercase() == "today") {
+                        status = "LIVE"
+                    } else {
+                        status = "UPCOMING"
+                    }
+                }
+
+                val event = EventEntity(
+                    id = 0,
+                    team1Name = team1,
+                    team1Flag = team1Flag,
+                    team2Name = team2,
+                    team2Flag = team2Flag,
+                    status = status,
+                    date = date,
+                    time = time,
+                    category = category,
+                    league = league,
+                    round = round
+                )
+                val eventId = eventDao.insertEvent(event).toInt()
+
+                val streamsArray = obj.optJSONArray("streams")
+                if (streamsArray != null) {
+                    for (j in 0 until streamsArray.length()) {
+                        val streamObj = streamsArray.getJSONObject(j)
+                        val quality = streamObj.optString("quality", "FHD")
+                        val label = streamObj.optString("label", "Main Stream")
+                        val url = streamObj.optString("url", "")
+
+                        val stream = StreamEntity(
+                            id = 0,
+                            eventId = eventId,
+                            quality = quality,
+                            serverName = label,
+                            streamUrl = url
+                        )
+                        streamDao.insertStream(stream)
+                    }
                 }
             }
 
@@ -202,40 +299,37 @@ class KaziRepository(context: Context) {
 
             // Compile local events & streams
             val localEventsList = eventDao.getAllEvents().firstOrNull() ?: emptyList()
-            val remoteEventsJsonList = mutableListOf<RemoteEventJson>()
+            val jsonArray = org.json.JSONArray()
 
             for (event in localEventsList) {
+                val obj = org.json.JSONObject()
+                obj.put("id", event.id.toString())
+                obj.put("team1", event.team1Name)
+                obj.put("team1_flag", event.team1Flag)
+                obj.put("team2", event.team2Name)
+                obj.put("team2_flag", event.team2Flag)
+                obj.put("date", event.date)
+                obj.put("time", event.time)
+                obj.put("category", event.category)
+                obj.put("league", event.league)
+                obj.put("round", event.round)
+                obj.put("status", event.status)
+
                 val localStreams = streamDao.getStreamsForEventSync(event.id)
-                val streamsJsonList = localStreams.map {
-                    RemoteStreamJson(
-                        id = it.id,
-                        quality = it.quality,
-                        label = it.serverName,
-                        url = it.streamUrl
-                    )
+                val streamsArray = org.json.JSONArray()
+                for (stream in localStreams) {
+                    val streamObj = org.json.JSONObject()
+                    streamObj.put("quality", stream.quality)
+                    streamObj.put("label", stream.serverName)
+                    streamObj.put("url", stream.streamUrl)
+                    streamsArray.put(streamObj)
                 }
-                remoteEventsJsonList.add(
-                    RemoteEventJson(
-                        id = event.id,
-                        team1Name = event.team1Name,
-                        team1Flag = event.team1Flag,
-                        team2Name = event.team2Name,
-                        team2Flag = event.team2Flag,
-                        status = event.status,
-                        date = event.date,
-                        time = event.time,
-                        category = event.category,
-                        league = event.league,
-                        round = event.round,
-                        streams = streamsJsonList
-                    )
-                )
+                obj.put("streams", streamsArray)
+                jsonArray.put(obj)
             }
 
-            // Serialize to JSON
-            val listType = Types.newParameterizedType(List::class.java, RemoteEventJson::class.java)
-            val adapter: JsonAdapter<List<RemoteEventJson>> = moshi.adapter<List<RemoteEventJson>>(listType).indent("  ")
-            val jsonString = adapter.toJson(remoteEventsJsonList)
+            // Serialize to JSON with beautiful indentation
+            val jsonString = jsonArray.toString(2)
 
             // Encode to Base64
             val base64Content = Base64.encodeToString(jsonString.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
@@ -269,34 +363,36 @@ class KaziRepository(context: Context) {
     suspend fun backupLocalDatabaseToJson(context: Context): String {
         return withContext(Dispatchers.IO) {
             val localEventsList = eventDao.getAllEvents().firstOrNull() ?: emptyList()
-            val remoteEventsJsonList = mutableListOf<RemoteEventJson>()
+            val jsonArray = org.json.JSONArray()
 
             for (event in localEventsList) {
+                val obj = org.json.JSONObject()
+                obj.put("id", event.id.toString())
+                obj.put("team1", event.team1Name)
+                obj.put("team1_flag", event.team1Flag)
+                obj.put("team2", event.team2Name)
+                obj.put("team2_flag", event.team2Flag)
+                obj.put("date", event.date)
+                obj.put("time", event.time)
+                obj.put("category", event.category)
+                obj.put("league", event.league)
+                obj.put("round", event.round)
+                obj.put("status", event.status)
+
                 val localStreams = streamDao.getStreamsForEventSync(event.id)
-                val streamsJsonList = localStreams.map {
-                    RemoteStreamJson(id = it.id, quality = it.quality, label = it.serverName, url = it.streamUrl)
+                val streamsArray = org.json.JSONArray()
+                for (stream in localStreams) {
+                    val streamObj = org.json.JSONObject()
+                    streamObj.put("quality", stream.quality)
+                    streamObj.put("label", stream.serverName)
+                    streamObj.put("url", stream.streamUrl)
+                    streamsArray.put(streamObj)
                 }
-                remoteEventsJsonList.add(
-                    RemoteEventJson(
-                        id = event.id,
-                        team1Name = event.team1Name,
-                        team1Flag = event.team1Flag,
-                        team2Name = event.team2Name,
-                        team2Flag = event.team2Flag,
-                        status = event.status,
-                        date = event.date,
-                        time = event.time,
-                        category = event.category,
-                        league = event.league,
-                        round = event.round,
-                        streams = streamsJsonList
-                    )
-                )
+                obj.put("streams", streamsArray)
+                jsonArray.put(obj)
             }
 
-            val listType = Types.newParameterizedType(List::class.java, RemoteEventJson::class.java)
-            val adapter: JsonAdapter<List<RemoteEventJson>> = moshi.adapter<List<RemoteEventJson>>(listType).indent("  ")
-            val json = adapter.toJson(remoteEventsJsonList)
+            val json = jsonArray.toString(2)
 
             // Save to shared preference or private file for simulated local backup
             val prefs = context.getSharedPreferences("kazi_tv_backups", Context.MODE_PRIVATE)
@@ -311,38 +407,67 @@ class KaziRepository(context: Context) {
                 val prefs = context.getSharedPreferences("kazi_tv_backups", Context.MODE_PRIVATE)
                 val json = prefs.getString("latest_backup", null) ?: return@withContext Result.failure(Exception("No backup found to restore."))
 
-                val listType = Types.newParameterizedType(List::class.java, RemoteEventJson::class.java)
-                val adapter: JsonAdapter<List<RemoteEventJson>> = moshi.adapter(listType)
-                val remoteEvents = adapter.fromJson(json) ?: return@withContext Result.failure(Exception("Invalid backup JSON."))
+                val jsonArray = org.json.JSONArray(json)
 
                 eventDao.clearAllEvents()
                 streamDao.clearAllStreams()
 
-                for (remoteEvent in remoteEvents) {
-                    val event = EventEntity(
-                        id = remoteEvent.id,
-                        team1Name = remoteEvent.team1Name,
-                        team1Flag = remoteEvent.team1Flag,
-                        team2Name = remoteEvent.team2Name,
-                        team2Flag = remoteEvent.team2Flag,
-                        status = remoteEvent.status,
-                        date = remoteEvent.date,
-                        time = remoteEvent.time,
-                        category = remoteEvent.category,
-                        league = remoteEvent.league,
-                        round = remoteEvent.round
-                    )
-                    eventDao.insertEvent(event)
+                for (i in 0 until jsonArray.length()) {
+                    val obj = jsonArray.getJSONObject(i)
+                    val team1 = obj.optString("team1", "")
+                    val team1Flag = obj.optString("team1_flag", "")
+                    val team2 = obj.optString("team2", "")
+                    val team2Flag = obj.optString("team2_flag", "")
+                    val date = obj.optString("date", "")
+                    val time = obj.optString("time", "")
+                    val category = obj.optString("category", "")
+                    val league = obj.optString("league", "")
+                    val round = obj.optString("round", "")
 
-                    for (remoteStream in remoteEvent.streams) {
-                        val stream = StreamEntity(
-                            id = remoteStream.id,
-                            eventId = remoteEvent.id,
-                            quality = remoteStream.quality,
-                            serverName = remoteStream.label,
-                            streamUrl = remoteStream.url
-                        )
-                        streamDao.insertStream(stream)
+                    var status = "LIVE"
+                    if (obj.has("status")) {
+                        status = obj.getString("status")
+                    } else {
+                        val day = obj.optString("day", "")
+                        if (day.lowercase() == "today") {
+                            status = "LIVE"
+                        } else {
+                            status = "UPCOMING"
+                        }
+                    }
+
+                    val event = EventEntity(
+                        id = 0,
+                        team1Name = team1,
+                        team1Flag = team1Flag,
+                        team2Name = team2,
+                        team2Flag = team2Flag,
+                        status = status,
+                        date = date,
+                        time = time,
+                        category = category,
+                        league = league,
+                        round = round
+                    )
+                    val eventId = eventDao.insertEvent(event).toInt()
+
+                    val streamsArray = obj.optJSONArray("streams")
+                    if (streamsArray != null) {
+                        for (j in 0 until streamsArray.length()) {
+                            val streamObj = streamsArray.getJSONObject(j)
+                            val quality = streamObj.optString("quality", "FHD")
+                            val label = streamObj.optString("label", "Main Stream")
+                            val url = streamObj.optString("url", "")
+
+                            val stream = StreamEntity(
+                                id = 0,
+                                eventId = eventId,
+                                quality = quality,
+                                serverName = label,
+                                streamUrl = url
+                            )
+                            streamDao.insertStream(stream)
+                        }
                     }
                 }
                 Result.success(Unit)
