@@ -84,13 +84,12 @@ fun KaziAppMain() {
             showExitDialog = true
         }
 
-        Scaffold(
+        Box(
             modifier = Modifier.fillMaxSize()
-        ) { padding ->
+        ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
             ) {
                 NavHost(
                     navController = navController,
@@ -1306,8 +1305,20 @@ fun KaziPlayerScreen(navController: NavHostController, viewModel: KaziViewModel)
         val activity = context as? Activity
         val originalOrientation = activity?.requestedOrientation ?: android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         activity?.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        
+        val window = activity?.window
+        if (window != null) {
+            val controller = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+            controller.hide(androidx.core.view.WindowInsetsCompat.Type.statusBars() or androidx.core.view.WindowInsetsCompat.Type.navigationBars())
+            controller.systemBarsBehavior = androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+        
         onDispose {
             activity?.requestedOrientation = originalOrientation
+            if (window != null) {
+                val controller = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+                controller.show(androidx.core.view.WindowInsetsCompat.Type.statusBars() or androidx.core.view.WindowInsetsCompat.Type.navigationBars())
+            }
         }
     }
 
