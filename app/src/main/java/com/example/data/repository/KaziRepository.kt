@@ -103,85 +103,22 @@ class KaziRepository(private val context: Context) {
 
     // Load Mock Data if Database is completely empty on first run
     suspend fun loadMockDataIfEmpty() {
-        // Find and delete the specific demo events that were inserted before
+        // Find and delete all demo/mock events from the database
         val events = eventDao.getAllEvents().firstOrNull() ?: emptyList()
         events.forEach { event ->
-            if (event.team1Name == "Manchester United" || event.team1Name == "Los Angeles Lakers") {
+            if (event.team1Name == "Manchester United" || 
+                event.team1Name == "Los Angeles Lakers" ||
+                event.team1Name == "Argentinaa" ||
+                event.team1Name == "France" ||
+                (event.team1Name == "Brazil" && event.team2Name == "Norway") ||
+                (event.team1Name == "India" && event.team2Name == "Pakistan")
+            ) {
                 eventDao.deleteEvent(event)
                 // Delete corresponding streams
                 val streams = streamDao.getStreamsForEventSync(event.id)
                 streams.forEach { stream ->
                     streamDao.deleteStream(stream)
                 }
-            }
-        }
-
-        // Load default LiveEvents.json from assets if database is empty
-        val remainingEvents = eventDao.getAllEvents().firstOrNull() ?: emptyList()
-        if (remainingEvents.isEmpty()) {
-            try {
-                val jsonString = context.assets.open("Live/LiveEvents.json").bufferedReader().use { it.readText() }
-                val jsonArray = parseEventJsonArray(jsonString)
-                for (i in 0 until jsonArray.length()) {
-                    val obj = jsonArray.getJSONObject(i)
-                    val team1 = obj.optString("team1", "")
-                    val team1Flag = obj.optString("team1_flag", "")
-                    val team2 = obj.optString("team2", "")
-                    val team2Flag = obj.optString("team2_flag", "")
-                    val date = obj.optString("date", "")
-                    val time = obj.optString("time", "")
-                    val category = obj.optString("category", "")
-                    val league = obj.optString("league", "")
-                    val round = obj.optString("round", "")
-
-                    var status = "LIVE"
-                    if (obj.has("status")) {
-                        status = obj.getString("status")
-                    } else {
-                        val day = obj.optString("day", "")
-                        if (day.lowercase() == "today") {
-                            status = "LIVE"
-                        } else {
-                            status = "UPCOMING"
-                        }
-                    }
-
-                    val event = EventEntity(
-                        id = 0,
-                        team1Name = team1,
-                        team1Flag = team1Flag,
-                        team2Name = team2,
-                        team2Flag = team2Flag,
-                        status = status,
-                        date = date,
-                        time = time,
-                        category = category,
-                        league = league,
-                        round = round
-                    )
-                    val eventId = eventDao.insertEvent(event).toInt()
-
-                    val streamsArray = obj.optJSONArray("streams")
-                    if (streamsArray != null) {
-                        for (j in 0 until streamsArray.length()) {
-                            val streamObj = streamsArray.getJSONObject(j)
-                            val quality = streamObj.optString("quality", "FHD")
-                            val label = streamObj.optString("label", "Main Stream")
-                            val url = streamObj.optString("url", "")
-
-                            val stream = StreamEntity(
-                                id = 0,
-                                eventId = eventId,
-                                quality = quality,
-                                serverName = label,
-                                streamUrl = url
-                            )
-                            streamDao.insertStream(stream)
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
         }
 

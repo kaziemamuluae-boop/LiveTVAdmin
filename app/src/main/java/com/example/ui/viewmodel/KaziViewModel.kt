@@ -75,7 +75,7 @@ class KaziViewModel(application: Application) : AndroidViewModel(application) {
             // Auto pull from GitHub on launch if configuration exists
             gitHubConfig.filter { it != null && it.username.isNotEmpty() && it.repository.isNotEmpty() }
                 .firstOrNull()?.let {
-                    syncFromGitHub()
+                    syncFromGitHub(silent = true)
                 }
         }
     }
@@ -92,20 +92,28 @@ class KaziViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun syncFromGitHub() {
+    fun syncFromGitHub(silent: Boolean = false) {
         checkInternetConnection()
         if (!_isInternetAvailable.value) {
-            _syncState.value = SyncState.Error("No Internet connection. Sync is not available.")
+            if (!silent) {
+                _syncState.value = SyncState.Error("No Internet connection. Sync is not available.")
+            }
             return
         }
         viewModelScope.launch {
-            _syncState.value = SyncState.Loading("Downloading LiveEvents.json...")
+            if (!silent) {
+                _syncState.value = SyncState.Loading("Downloading LiveEvents.json...")
+            }
             repository.downloadLiveEventsFromGitHub()
                 .onSuccess {
-                    _syncState.value = SyncState.Success("Synced successfully from GitHub!")
+                    if (!silent) {
+                        _syncState.value = SyncState.Success("Synced successfully from GitHub!")
+                    }
                 }
                 .onFailure {
-                    _syncState.value = SyncState.Error(it.message ?: "Failed to download.")
+                    if (!silent) {
+                        _syncState.value = SyncState.Error(it.message ?: "Failed to download.")
+                    }
                 }
         }
     }

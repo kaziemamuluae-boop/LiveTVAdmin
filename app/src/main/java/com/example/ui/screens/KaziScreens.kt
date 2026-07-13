@@ -38,6 +38,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.compose.AsyncImage
 import com.example.R
 import com.example.data.model.EventEntity
@@ -137,8 +138,12 @@ fun KaziAppMain() {
                 }
 
                 // Global Sync State Notifications Toast/Overlay
-                val syncState by viewModel.syncState.collectAsStateWithLifecycle()
-                SyncStateNotification(syncState, onDismiss = { viewModel.clearSyncState() })
+                val currentBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = currentBackStackEntry?.destination?.route
+                if (currentRoute != KaziRoutes.SPLASH) {
+                    val syncState by viewModel.syncState.collectAsStateWithLifecycle()
+                    SyncStateNotification(syncState, onDismiss = { viewModel.clearSyncState() })
+                }
 
                 // Exit Confirmation Overlay
                 if (showExitDialog) {
@@ -177,7 +182,7 @@ fun KaziSplashScreen(navController: NavHostController, viewModel: KaziViewModel)
         }
 
         statusText = "Syncing live sports matches from GitHub..."
-        viewModel.syncFromGitHub()
+        viewModel.syncFromGitHub(silent = true)
         delay(1500)
 
         navController.navigate(KaziRoutes.HOME) {
@@ -480,7 +485,7 @@ fun KaziHomeScreen(navController: NavHostController, viewModel: KaziViewModel) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .testTag("match_list_card"),
-                            shape = RoundedCornerShape(28.dp),
+                            shape = RoundedCornerShape(12.dp),
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.surface
                             ),
@@ -597,7 +602,7 @@ fun FeaturedEventCard(
             .fillMaxWidth()
             .aspectRatio(16f / 9f)
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1C1E)),
         border = BorderStroke(1.dp, Color(0x0DFFFFFF))
     ) {
@@ -769,7 +774,7 @@ fun EventCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF1A1C1E)
         ),
@@ -2632,7 +2637,7 @@ fun KaziFavoritesScreen(navController: NavHostController, viewModel: KaziViewMod
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .testTag("favorites_list_card"),
-                            shape = RoundedCornerShape(28.dp),
+                            shape = RoundedCornerShape(12.dp),
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.surface
                             ),
