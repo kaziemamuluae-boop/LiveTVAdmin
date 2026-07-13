@@ -292,7 +292,8 @@ fun PremiumPlayer(
                         modifier = Modifier
                             .fillMaxWidth()
                             .statusBarsPadding()
-                            .padding(16.dp)
+                            .height(56.dp)
+                            .padding(horizontal = 16.dp)
                             .align(Alignment.TopCenter),
                         verticalAlignment = Alignment.CenterVertically
                     ) {

@@ -282,12 +282,14 @@ fun KaziHomeScreen(navController: NavHostController, viewModel: KaziViewModel) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.background)
+                    .statusBarsPadding()
                     .padding(horizontal = 16.dp)
-                    .padding(top = 16.dp, bottom = 8.dp)
             ) {
                 // Header Row with Sleek Logo Badge & Styling
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(
@@ -372,37 +374,6 @@ fun KaziHomeScreen(navController: NavHostController, viewModel: KaziViewModel) {
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Search field with Sleek Interface input style
-                TextField(
-                    value = searchQuery,
-                    onValueChange = { viewModel.setSearchQuery(it) },
-                    placeholder = { Text("Search matches, leagues, sports...", fontSize = 14.sp, color = Color(0xFF9EA1A4)) },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search Icon", tint = Color(0xFFC4C7C5), modifier = Modifier.size(20.dp)) },
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { viewModel.setSearchQuery("") }) {
-                                Icon(Icons.Default.Clear, contentDescription = "Clear search", tint = Color(0xFFC4C7C5))
-                            }
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .border(1.dp, Color(0x0DFFFFFF), RoundedCornerShape(16.dp)),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color(0xFF1A1C1E),
-                        unfocusedContainerColor = Color(0xFF1A1C1E),
-                        disabledContainerColor = Color(0xFF1A1C1E),
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
-                    )
-                )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -1217,7 +1188,8 @@ fun KaziWatchStreamScreen(navController: NavHostController, viewModel: KaziViewM
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(16.dp),
+                    .height(56.dp)
+                    .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { navController.navigateUp() }) {
@@ -1329,6 +1301,16 @@ fun KaziWatchStreamScreen(navController: NavHostController, viewModel: KaziViewM
 fun KaziPlayerScreen(navController: NavHostController, viewModel: KaziViewModel) {
     val activeStream by viewModel.activePlayingStream.collectAsStateWithLifecycle()
 
+    val context = LocalContext.current
+    DisposableEffect(Unit) {
+        val activity = context as? Activity
+        val originalOrientation = activity?.requestedOrientation ?: android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        activity?.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        onDispose {
+            activity?.requestedOrientation = originalOrientation
+        }
+    }
+
     if (activeStream == null) {
         LaunchedEffect(Unit) {
             navController.navigate(KaziRoutes.HOME) { popUpTo(KaziRoutes.HOME) { inclusive = true } }
@@ -1414,7 +1396,8 @@ fun KaziAddEventScreen(navController: NavHostController, viewModel: KaziViewMode
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(16.dp),
+                    .height(56.dp)
+                    .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { navController.navigateUp() }) {
@@ -1763,7 +1746,8 @@ fun KaziEditEventScreen(navController: NavHostController, viewModel: KaziViewMod
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(16.dp),
+                    .height(56.dp)
+                    .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { navController.navigateUp() }) {
@@ -1955,7 +1939,8 @@ fun KaziStreamManagerScreen(navController: NavHostController, viewModel: KaziVie
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(16.dp),
+                    .height(56.dp)
+                    .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { navController.navigateUp() }) {
@@ -2083,7 +2068,8 @@ fun KaziAddStreamScreen(navController: NavHostController, viewModel: KaziViewMod
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(16.dp),
+                    .height(56.dp)
+                    .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { navController.navigateUp() }) {
@@ -2201,7 +2187,8 @@ fun KaziEditStreamScreen(navController: NavHostController, viewModel: KaziViewMo
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(16.dp),
+                    .height(56.dp)
+                    .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { navController.navigateUp() }) {
@@ -2321,7 +2308,8 @@ fun KaziGitHubSettingsScreen(navController: NavHostController, viewModel: KaziVi
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(16.dp),
+                    .height(56.dp)
+                    .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { navController.navigateUp() }) {
@@ -2460,7 +2448,8 @@ fun KaziSettingsScreen(navController: NavHostController, viewModel: KaziViewMode
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(16.dp),
+                    .height(56.dp)
+                    .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { navController.navigateUp() }) {
@@ -2590,7 +2579,8 @@ fun KaziFavoritesScreen(navController: NavHostController, viewModel: KaziViewMod
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(16.dp),
+                    .height(56.dp)
+                    .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { navController.navigateUp() }) {
@@ -2698,7 +2688,8 @@ fun KaziAboutScreen(navController: NavHostController, viewModel: KaziViewModel) 
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(16.dp),
+                    .height(56.dp)
+                    .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { navController.navigateUp() }) {
