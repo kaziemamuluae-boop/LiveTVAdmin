@@ -83,6 +83,24 @@ class KaziRepository(private val context: Context) {
     suspend fun deleteStream(stream: StreamEntity) = streamDao.deleteStream(stream)
     suspend fun deleteStreamById(id: Int) = streamDao.deleteStreamById(id)
 
+    private fun parseEventJsonArray(jsonString: String): org.json.JSONArray {
+        val trimmed = jsonString.trim()
+        return if (trimmed.startsWith("{")) {
+            try {
+                val rootObj = org.json.JSONObject(trimmed)
+                rootObj.optJSONArray("events") ?: org.json.JSONArray()
+            } catch (e: Exception) {
+                org.json.JSONArray()
+            }
+        } else {
+            try {
+                org.json.JSONArray(trimmed)
+            } catch (e: Exception) {
+                org.json.JSONArray()
+            }
+        }
+    }
+
     // Load Mock Data if Database is completely empty on first run
     suspend fun loadMockDataIfEmpty() {
         // Find and delete the specific demo events that were inserted before
@@ -103,7 +121,7 @@ class KaziRepository(private val context: Context) {
         if (remainingEvents.isEmpty()) {
             try {
                 val jsonString = context.assets.open("Live/LiveEvents.json").bufferedReader().use { it.readText() }
-                val jsonArray = org.json.JSONArray(jsonString)
+                val jsonArray = parseEventJsonArray(jsonString)
                 for (i in 0 until jsonArray.length()) {
                     val obj = jsonArray.getJSONObject(i)
                     val team1 = obj.optString("team1", "")
@@ -191,7 +209,7 @@ class KaziRepository(private val context: Context) {
                 authHeader = authHeader,
                 owner = config.username,
                 repo = config.repository,
-                path = "LiveEvents.json"
+                path = "Live/LiveEvents.json"
             )
 
             if (!response.isSuccessful) {
@@ -207,7 +225,7 @@ class KaziRepository(private val context: Context) {
             val jsonString = String(decodedBytes, Charsets.UTF_8)
 
             // Parse json
-            val jsonArray = org.json.JSONArray(jsonString)
+            val jsonArray = parseEventJsonArray(jsonString)
 
             // Clear and overwrite local DB tables
             eventDao.clearAllEvents()
@@ -293,7 +311,7 @@ class KaziRepository(private val context: Context) {
                 authHeader = authHeader,
                 owner = config.username,
                 repo = config.repository,
-                path = "LiveEvents.json"
+                path = "Live/LiveEvents.json"
             )
             val fileSha = if (shaResponse.isSuccessful) shaResponse.body()?.sha else null
 
@@ -345,7 +363,7 @@ class KaziRepository(private val context: Context) {
                 authHeader = authHeader,
                 owner = config.username,
                 repo = config.repository,
-                path = "LiveEvents.json",
+                path = "Live/LiveEvents.json",
                 body = updateRequest
             )
 

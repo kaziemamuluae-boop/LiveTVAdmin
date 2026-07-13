@@ -2395,6 +2395,7 @@ fun KaziGitHubSettingsScreen(navController: NavHostController, viewModel: KaziVi
                         isSyncEnabled = isSyncEnabled
                     )
                     viewModel.saveGitHubConfig(config)
+                    viewModel.syncFromGitHub()
                 },
                 modifier = Modifier
                     .fillMaxWidth()

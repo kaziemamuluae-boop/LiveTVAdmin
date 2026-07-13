@@ -72,6 +72,11 @@ class KaziViewModel(application: Application) : AndroidViewModel(application) {
         checkInternetConnection()
         viewModelScope.launch {
             repository.loadMockDataIfEmpty()
+            // Auto pull from GitHub on launch if configuration exists
+            gitHubConfig.filter { it != null && it.username.isNotEmpty() && it.repository.isNotEmpty() }
+                .firstOrNull()?.let {
+                    syncFromGitHub()
+                }
         }
     }
 
