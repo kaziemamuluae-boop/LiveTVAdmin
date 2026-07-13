@@ -1,3 +1,4 @@
+@file:kotlin.OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.media3.common.util.UnstableApi::class)
 package com.example.ui.components
 
 import android.app.Activity
@@ -38,12 +39,14 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.compose.material3.ExperimentalMaterial3Api
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.min
 
-@OptIn(UnstableApi::class)
+@OptIn(UnstableApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun PremiumPlayer(
     streamUrl: String,
@@ -157,6 +160,7 @@ fun PremiumPlayer(
                 PlayerView(ctx).apply {
                     player = exoPlayer
                     useController = false
+                    resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
                     layoutParams = ViewGroup.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
@@ -402,12 +406,31 @@ fun PremiumPlayer(
                                 },
                                 modifier = Modifier
                                     .weight(1f)
+                                    .height(16.dp)
                                     .padding(horizontal = 8.dp),
                                 colors = SliderDefaults.colors(
                                     thumbColor = MaterialTheme.colorScheme.primary,
                                     activeTrackColor = MaterialTheme.colorScheme.primary,
                                     inactiveTrackColor = Color.White.copy(alpha = 0.3f)
-                                )
+                                ),
+                                thumb = { sliderState ->
+                                    Box(
+                                        modifier = Modifier
+                                            .size(10.dp)
+                                            .background(MaterialTheme.colorScheme.primary, androidx.compose.foundation.shape.CircleShape)
+                                    )
+                                },
+                                track = { sliderState ->
+                                    SliderDefaults.Track(
+                                        sliderState = sliderState,
+                                        modifier = Modifier.height(3.dp),
+                                        colors = SliderDefaults.colors(
+                                            activeTrackColor = MaterialTheme.colorScheme.primary,
+                                            inactiveTrackColor = Color.White.copy(alpha = 0.3f)
+                                        ),
+                                        enabled = true
+                                    )
+                                }
                             )
                             Text(
                                 text = formatTime(duration),
