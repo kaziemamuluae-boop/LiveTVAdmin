@@ -28,8 +28,10 @@ android {
       val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/KaziTV.jks"
       storeFile = file(keystorePath)
       storePassword = System.getenv("STORE_PASSWORD") ?: "Kazi01071994"
-      keyAlias = System.getenv("KEY_ALIAS") ?: "KaziEmamul"
+      keyAlias = System.getenv("KEY_ALIAS") ?: "kaziemamul"
       keyPassword = System.getenv("KEY_PASSWORD") ?: "Kazi01071994"
+      isV1SigningEnabled = true
+      isV2SigningEnabled = true
     }
     create("debugConfig") {
       storeFile = file("${rootDir}/debug.keystore")
@@ -42,7 +44,8 @@ android {
   buildTypes {
     release {
       isCrunchPngs = false
-      isMinifyEnabled = false
+      isMinifyEnabled = true
+      isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("release")
     }
