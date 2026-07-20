@@ -213,14 +213,15 @@ class KaziRepository(private val context: Context) {
                         val streamObj = streamsArray.getJSONObject(j)
                         val quality = streamObj.optString("quality", "FHD")
                         val label = streamObj.optString("label", "Main Stream")
-                        val url = streamObj.optString("url", "")
+                        val rawUrl = streamObj.optString("url", "")
+                        val decryptedUrl = com.example.data.util.KaziCrypto.decrypt(rawUrl)
 
                         val stream = StreamEntity(
                             id = 0,
                             eventId = eventId,
                             quality = quality,
                             serverName = label,
-                            streamUrl = url
+                            streamUrl = decryptedUrl
                         )
                         streamDao.insertStream(stream)
                     }
@@ -276,7 +277,8 @@ class KaziRepository(private val context: Context) {
                     val streamObj = org.json.JSONObject()
                     streamObj.put("quality", stream.quality)
                     streamObj.put("label", stream.serverName)
-                    streamObj.put("url", stream.streamUrl)
+                    val encryptedUrl = com.example.data.util.KaziCrypto.encrypt(stream.streamUrl)
+                    streamObj.put("url", encryptedUrl)
                     streamsArray.put(streamObj)
                 }
                 obj.put("streams", streamsArray)
@@ -412,14 +414,15 @@ class KaziRepository(private val context: Context) {
                             val streamObj = streamsArray.getJSONObject(j)
                             val quality = streamObj.optString("quality", "FHD")
                             val label = streamObj.optString("label", "Main Stream")
-                            val url = streamObj.optString("url", "")
+                            val rawUrl = streamObj.optString("url", "")
+                            val decryptedUrl = com.example.data.util.KaziCrypto.decrypt(rawUrl)
 
                             val stream = StreamEntity(
                                 id = 0,
                                 eventId = eventId,
                                 quality = quality,
                                 serverName = label,
-                                streamUrl = url
+                                streamUrl = decryptedUrl
                             )
                             streamDao.insertStream(stream)
                         }
