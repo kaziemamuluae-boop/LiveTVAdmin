@@ -9,5 +9,8 @@ data class StreamEntity(
     val eventId: Int, // Foreign key linking to EventEntity.id
     val quality: String, // "FHD", "HD", "SD"
     val serverName: String, // e.g., "Server 1"
-    val streamUrl: String
+    val streamUrl: String,
+    val linkType: String = "HLS",
+    val clearKeyId: String = "",
+    val clearKey: String = ""
 )

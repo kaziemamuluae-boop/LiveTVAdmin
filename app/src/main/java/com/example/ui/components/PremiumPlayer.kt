@@ -52,6 +52,9 @@ fun PremiumPlayer(
     streamUrl: String,
     serverName: String,
     quality: String,
+    linkType: String = "HLS",
+    clearKeyId: String = "",
+    clearKey: String = "",
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -63,10 +66,56 @@ fun PremiumPlayer(
     val autoResumePosition = remember(streamUrl) { sharedPrefs.getLong(streamUrl, 0L) }
 
     // ExoPlayer Instance
-    val exoPlayer = remember(streamUrl) {
+    val exoPlayer = remember(streamUrl, linkType, clearKeyId, clearKey) {
         ExoPlayer.Builder(context).build().apply {
             playWhenReady = true
-            val mediaItem = MediaItem.fromUri(streamUrl)
+            val mediaItem = if (linkType.equals("DRM", ignoreCase = true) && clearKeyId.isNotEmpty() && clearKey.isNotEmpty()) {
+                val CLEARKEY_UUID = java.util.UUID.fromString("e12d3521-484d-4d25-a6e3-500e5720993a")
+                
+                // Helper to encode string/hex to base64url
+                fun toBase64Url(input: String): String {
+                    // Clean up common characters (spaces, hyphens, colons, brackets, quotes)
+                    val clean = input.replace(Regex("[\\s\\-:\\{\\}\\[\\]\"']"), "")
+                    
+                    // If it is a hex string, convert it to bytes first
+                    val bytes = if (clean.all { it in "0123456789abcdefABCDEF" } && clean.length % 2 == 0 && clean.isNotEmpty()) {
+                        ByteArray(clean.length / 2) { i ->
+                            clean.substring(i * 2, i * 2 + 2).toInt(16).toByte()
+                        }
+                    } else {
+                        try {
+                            // Try decoding as standard base64/base64url first
+                            android.util.Base64.decode(clean, android.util.Base64.DEFAULT)
+                        } catch (e: Exception) {
+                            // Fallback to raw bytes
+                            clean.toByteArray(Charsets.UTF_8)
+                        }
+                    }
+                    return android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP or android.util.Base64.NO_PADDING or android.util.Base64.URL_SAFE).trim()
+                }
+
+                try {
+                    val keyIdBase64Url = toBase64Url(clearKeyId)
+                    val keyBase64Url = toBase64Url(clearKey)
+                    val jwkJson = """{"keys":[{"kty":"oct","k":"$keyBase64Url","kid":"$keyIdBase64Url"}],"type":"temporary"}"""
+                    val jwkBase64 = android.util.Base64.encodeToString(jwkJson.toByteArray(Charsets.UTF_8), android.util.Base64.NO_WRAP or android.util.Base64.NO_PADDING or android.util.Base64.URL_SAFE).trim()
+                    val dataUri = android.net.Uri.parse("data:application/json;base64,$jwkBase64")
+                    
+                    MediaItem.Builder()
+                        .setUri(streamUrl)
+                        .setDrmConfiguration(
+                            MediaItem.DrmConfiguration.Builder(CLEARKEY_UUID)
+                                .setLicenseUri(dataUri)
+                                .build()
+                        )
+                        .build()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    MediaItem.fromUri(streamUrl)
+                }
+            } else {
+                MediaItem.fromUri(streamUrl)
+            }
             setMediaItem(mediaItem)
             if (autoResumePosition > 0) {
                 seekTo(autoResumePosition)

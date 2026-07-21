@@ -215,13 +215,21 @@ class KaziRepository(private val context: Context) {
                         val label = streamObj.optString("label", "Main Stream")
                         val rawUrl = streamObj.optString("url", "")
                         val decryptedUrl = com.example.data.util.KaziCrypto.decrypt(rawUrl)
+                        val linkType = streamObj.optString("link_type", "HLS")
+                        val encryptedKeyId = streamObj.optString("clear_key_id", "")
+                        val clearKeyId = com.example.data.util.KaziCrypto.decrypt(encryptedKeyId)
+                        val encryptedKey = streamObj.optString("clear_key", "")
+                        val clearKey = com.example.data.util.KaziCrypto.decrypt(encryptedKey)
 
                         val stream = StreamEntity(
                             id = 0,
                             eventId = eventId,
                             quality = quality,
                             serverName = label,
-                            streamUrl = decryptedUrl
+                            streamUrl = decryptedUrl,
+                            linkType = linkType,
+                            clearKeyId = clearKeyId,
+                            clearKey = clearKey
                         )
                         streamDao.insertStream(stream)
                     }
@@ -279,6 +287,11 @@ class KaziRepository(private val context: Context) {
                     streamObj.put("label", stream.serverName)
                     val encryptedUrl = com.example.data.util.KaziCrypto.encrypt(stream.streamUrl)
                     streamObj.put("url", encryptedUrl)
+                    streamObj.put("link_type", stream.linkType)
+                    val encryptedKeyId = com.example.data.util.KaziCrypto.encrypt(stream.clearKeyId)
+                    streamObj.put("clear_key_id", encryptedKeyId)
+                    val encryptedKey = com.example.data.util.KaziCrypto.encrypt(stream.clearKey)
+                    streamObj.put("clear_key", encryptedKey)
                     streamsArray.put(streamObj)
                 }
                 obj.put("streams", streamsArray)
@@ -342,7 +355,13 @@ class KaziRepository(private val context: Context) {
                     val streamObj = org.json.JSONObject()
                     streamObj.put("quality", stream.quality)
                     streamObj.put("label", stream.serverName)
-                    streamObj.put("url", stream.streamUrl)
+                    val encryptedUrl = com.example.data.util.KaziCrypto.encrypt(stream.streamUrl)
+                    streamObj.put("url", encryptedUrl)
+                    streamObj.put("link_type", stream.linkType)
+                    val encryptedKeyId = com.example.data.util.KaziCrypto.encrypt(stream.clearKeyId)
+                    streamObj.put("clear_key_id", encryptedKeyId)
+                    val encryptedKey = com.example.data.util.KaziCrypto.encrypt(stream.clearKey)
+                    streamObj.put("clear_key", encryptedKey)
                     streamsArray.put(streamObj)
                 }
                 obj.put("streams", streamsArray)
@@ -416,13 +435,21 @@ class KaziRepository(private val context: Context) {
                             val label = streamObj.optString("label", "Main Stream")
                             val rawUrl = streamObj.optString("url", "")
                             val decryptedUrl = com.example.data.util.KaziCrypto.decrypt(rawUrl)
+                            val linkType = streamObj.optString("link_type", "HLS")
+                            val rawKeyId = streamObj.optString("clear_key_id", "")
+                            val clearKeyId = com.example.data.util.KaziCrypto.decrypt(rawKeyId)
+                            val rawKey = streamObj.optString("clear_key", "")
+                            val clearKey = com.example.data.util.KaziCrypto.decrypt(rawKey)
 
                             val stream = StreamEntity(
                                 id = 0,
                                 eventId = eventId,
                                 quality = quality,
                                 serverName = label,
-                                streamUrl = decryptedUrl
+                                streamUrl = decryptedUrl,
+                                linkType = linkType,
+                                clearKeyId = clearKeyId,
+                                clearKey = clearKey
                             )
                             streamDao.insertStream(stream)
                         }

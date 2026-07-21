@@ -1340,6 +1340,9 @@ fun KaziPlayerScreen(navController: NavHostController, viewModel: KaziViewModel)
         streamUrl = stream.streamUrl,
         serverName = stream.serverName,
         quality = stream.quality,
+        linkType = stream.linkType,
+        clearKeyId = stream.clearKeyId,
+        clearKey = stream.clearKey,
         onBack = {
             navController.navigateUp()
         }
@@ -1353,7 +1356,10 @@ fun KaziPlayerScreen(navController: NavHostController, viewModel: KaziViewModel)
 data class StreamInput(
     val serverName: String = "",
     val streamUrl: String = "",
-    val quality: String = "FHD"
+    val quality: String = "FHD",
+    val linkType: String = "HLS",
+    val clearKeyId: String = "",
+    val clearKey: String = ""
 )
 
 @Composable
@@ -1672,6 +1678,48 @@ fun KaziAddEventScreen(navController: NavHostController, viewModel: KaziViewMode
                                 }
                             }
                         }
+
+                        // Link Type selection for this stream
+                        var isTypeExpanded by remember { mutableStateOf(false) }
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            OutlinedButton(
+                                onClick = { isTypeExpanded = true },
+                                modifier = Modifier.fillMaxWidth().height(48.dp)
+                            ) {
+                                Text("Link Type: ${streamInput.linkType}")
+                            }
+                            DropdownMenu(expanded = isTypeExpanded, onDismissRequest = { isTypeExpanded = false }) {
+                                listOf("HLS", "DRM").forEach { t ->
+                                    DropdownMenuItem(
+                                        text = { Text(t) },
+                                        onClick = {
+                                            streamsList[index] = streamInput.copy(linkType = t)
+                                            isTypeExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        if (streamInput.linkType == "DRM") {
+                            OutlinedTextField(
+                                value = streamInput.clearKeyId,
+                                onValueChange = { newValue ->
+                                    streamsList[index] = streamInput.copy(clearKeyId = newValue)
+                                },
+                                label = { Text("ক্লিয়ার কীড (Clear Key ID)") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            OutlinedTextField(
+                                value = streamInput.clearKey,
+                                onValueChange = { newValue ->
+                                    streamsList[index] = streamInput.copy(clearKey = newValue)
+                                },
+                                label = { Text("ক্লিয়ার কি (Clear Key)") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                 }
             }
@@ -1699,7 +1747,10 @@ fun KaziAddEventScreen(navController: NavHostController, viewModel: KaziViewMode
                                 eventId = 0, // Assigned later in VM
                                 quality = streamInput.quality,
                                 serverName = streamInput.serverName,
-                                streamUrl = streamInput.streamUrl
+                                streamUrl = streamInput.streamUrl,
+                                linkType = streamInput.linkType,
+                                clearKeyId = streamInput.clearKeyId,
+                                clearKey = streamInput.clearKey
                             )
                         }
                         viewModel.addEvent(event, streamEntities)
@@ -2077,6 +2128,9 @@ fun KaziAddStreamScreen(navController: NavHostController, viewModel: KaziViewMod
     var quality by remember { mutableStateOf("FHD") }
     var serverName by remember { mutableStateOf("") }
     var streamUrl by remember { mutableStateOf("") }
+    var linkType by remember { mutableStateOf("HLS") }
+    var clearKeyId by remember { mutableStateOf("") }
+    var clearKey by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -2141,6 +2195,44 @@ fun KaziAddStreamScreen(navController: NavHostController, viewModel: KaziViewMod
                 }
             }
 
+            // Link Type Select
+            var isTypeExpanded by remember { mutableStateOf(false) }
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(
+                    onClick = { isTypeExpanded = true },
+                    modifier = Modifier.fillMaxWidth().height(56.dp)
+                ) {
+                    Text("Link Type: $linkType")
+                }
+                DropdownMenu(expanded = isTypeExpanded, onDismissRequest = { isTypeExpanded = false }) {
+                    listOf("HLS", "DRM").forEach { t ->
+                        DropdownMenuItem(
+                            text = { Text(t) },
+                            onClick = {
+                                linkType = t
+                                isTypeExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            if (linkType == "DRM") {
+                OutlinedTextField(
+                    value = clearKeyId,
+                    onValueChange = { clearKeyId = it },
+                    label = { Text("ক্লিয়ার কীড (Clear Key ID)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = clearKey,
+                    onValueChange = { clearKey = it },
+                    label = { Text("ক্লিয়ার কি (Clear Key)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
@@ -2150,7 +2242,10 @@ fun KaziAddStreamScreen(navController: NavHostController, viewModel: KaziViewMod
                             eventId = event.id,
                             quality = quality,
                             serverName = serverName,
-                            streamUrl = streamUrl
+                            streamUrl = streamUrl,
+                            linkType = linkType,
+                            clearKeyId = clearKeyId,
+                            clearKey = clearKey
                         )
                         viewModel.addStream(stream)
                         navController.navigateUp()
@@ -2196,6 +2291,9 @@ fun KaziEditStreamScreen(navController: NavHostController, viewModel: KaziViewMo
     var quality by remember { mutableStateOf(stream.quality) }
     var serverName by remember { mutableStateOf(stream.serverName) }
     var streamUrl by remember { mutableStateOf(stream.streamUrl) }
+    var linkType by remember { mutableStateOf(stream.linkType) }
+    var clearKeyId by remember { mutableStateOf(stream.clearKeyId) }
+    var clearKey by remember { mutableStateOf(stream.clearKey) }
 
     Scaffold(
         topBar = {
@@ -2258,6 +2356,44 @@ fun KaziEditStreamScreen(navController: NavHostController, viewModel: KaziViewMo
                 }
             }
 
+            // Link Type Select
+            var isTypeExpanded by remember { mutableStateOf(false) }
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(
+                    onClick = { isTypeExpanded = true },
+                    modifier = Modifier.fillMaxWidth().height(56.dp)
+                ) {
+                    Text("Link Type: $linkType")
+                }
+                DropdownMenu(expanded = isTypeExpanded, onDismissRequest = { isTypeExpanded = false }) {
+                    listOf("HLS", "DRM").forEach { t ->
+                        DropdownMenuItem(
+                            text = { Text(t) },
+                            onClick = {
+                                linkType = t
+                                isTypeExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            if (linkType == "DRM") {
+                OutlinedTextField(
+                    value = clearKeyId,
+                    onValueChange = { clearKeyId = it },
+                    label = { Text("ক্লিয়ার কীড (Clear Key ID)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = clearKey,
+                    onValueChange = { clearKey = it },
+                    label = { Text("ক্লিয়ার কি (Clear Key)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
@@ -2266,7 +2402,10 @@ fun KaziEditStreamScreen(navController: NavHostController, viewModel: KaziViewMo
                         val updated = stream.copy(
                             quality = quality,
                             serverName = serverName,
-                            streamUrl = streamUrl
+                            streamUrl = streamUrl,
+                            linkType = linkType,
+                            clearKeyId = clearKeyId,
+                            clearKey = clearKey
                         )
                         viewModel.updateStream(updated)
                         navController.navigateUp()
