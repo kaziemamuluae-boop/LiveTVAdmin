@@ -273,6 +273,15 @@ fun KaziHomeScreen(navController: NavHostController, viewModel: KaziViewModel) {
     val filteredEvents by viewModel.filteredEvents.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
+    val allEvents by viewModel.allEvents.collectAsStateWithLifecycle()
+
+    val categories = remember(allEvents) {
+        val activeCategories = allEvents.map { it.category.trim() }
+            .distinct()
+            .filter { it.isNotEmpty() }
+            .sorted()
+        listOf("All") + activeCategories
+    }
 
     var isRefreshing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -388,7 +397,6 @@ fun KaziHomeScreen(navController: NavHostController, viewModel: KaziViewModel) {
                         .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    val categories = listOf("All", "Football", "Cricket", "Basketball", "Tennis", "Esports", "Others")
                     categories.forEach { cat ->
                         val isSelected = (selectedCategory == "All" && cat == "All") || selectedCategory == cat
                         SleekCategoryChip(
@@ -965,30 +973,27 @@ fun EventCard(
 fun TeamFlag(url: String, char: Char, size: androidx.compose.ui.unit.Dp = 60.dp) {
     Box(
         modifier = Modifier
-            .size(size),
+            .size(size)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), CircleShape),
         contentAlignment = Alignment.Center
     ) {
         if (url.isNotEmpty() && (url.startsWith("http://") || url.startsWith("https://"))) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                AsyncImage(
-                    model = url,
-                    contentDescription = "Team Flag",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize().clip(CircleShape)
-                )
-            }
+            AsyncImage(
+                model = url,
+                contentDescription = "Team Flag",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
         } else {
             // It could be an emoji (like 🇦🇷) or a fallback character
             val displayText = url.ifEmpty { char.toString().uppercase() }
             Text(
                 text = displayText,
-                fontSize = if (url.isNotEmpty()) (size.value * 0.5f).sp else (size.value * 0.4f).sp,
+                fontSize = if (url.isNotEmpty()) (size.value * 0.45f).sp else (size.value * 0.45f).sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
         }
@@ -2154,7 +2159,8 @@ fun KaziAddStreamScreen(navController: NavHostController, viewModel: KaziViewMod
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 16.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text("Configure streaming server specs for matches.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
@@ -2317,7 +2323,8 @@ fun KaziEditStreamScreen(navController: NavHostController, viewModel: KaziViewMo
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 16.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             OutlinedTextField(
@@ -3114,7 +3121,7 @@ fun HtmlStyleMatchRow(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                TeamFlag(url = event.team1Flag, char = event.team1Name.firstOrNull() ?: '1', size = 36.dp)
+                TeamFlag(url = event.team1Flag, char = event.team1Name.firstOrNull() ?: '1', size = 48.dp)
                 Text(
                     text = event.team1Name,
                     fontSize = 12.sp,
@@ -3216,7 +3223,7 @@ fun HtmlStyleMatchRow(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                TeamFlag(url = event.team2Flag, char = event.team2Name.firstOrNull() ?: '2', size = 36.dp)
+                TeamFlag(url = event.team2Flag, char = event.team2Name.firstOrNull() ?: '2', size = 48.dp)
                 Text(
                     text = event.team2Name,
                     fontSize = 12.sp,
